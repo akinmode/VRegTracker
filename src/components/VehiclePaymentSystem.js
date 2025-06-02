@@ -14,7 +14,7 @@ const VehiclePaymentSystem = () => {
     notes: ''
   });
 
-  // Load data from memory and data file on component mount
+// Load data from memory and data file on component mount
   useEffect(() => {
     const loadInitialData = async () => {
       // Try to load from data file first
@@ -22,14 +22,35 @@ const VehiclePaymentSystem = () => {
         const response = await fetch('/data/vehicles.json');
         if (response.ok) {
           const vehicleData = await response.json();
-          const processedVehicles = vehicleData.map(vehicle => ({
-            ...vehicle,
-            id: vehicle.id || Date.now() + Math.random(),
-            dateAdded: vehicle.dateAdded || new Date().toISOString().split('T')[0],
-            totalPayments: vehicle.totalPayments || 0,
-            paymentHistory: vehicle.paymentHistory || [],
-            lastPaidDate: vehicle.lastPaidDate || null
-          }));
+          
+          // Check if the data is an array of strings (reg numbers only) or full objects
+          const processedVehicles = vehicleData.map((item, index) => {
+            if (typeof item === 'string') {
+              // If it's just a reg number string, create a full vehicle object
+              return {
+                id: Date.now() + index,
+                regNumber: item.toUpperCase(),
+                dateAdded: new Date().toISOString().split('T')[0],
+                totalPayments: 0,
+                paymentHistory: [],
+                lastPaidDate: null,
+                notes: ''
+              };
+            } else {
+              // If it's already an object, process it as before
+              return {
+                ...item,
+                id: item.id || Date.now() + index,
+                regNumber: (item.regNumber || item.reg || '').toUpperCase(),
+                dateAdded: item.dateAdded || new Date().toISOString().split('T')[0],
+                totalPayments: item.totalPayments || 0,
+                paymentHistory: item.paymentHistory || [],
+                lastPaidDate: item.lastPaidDate || null,
+                notes: item.notes || ''
+              };
+            }
+          });
+          
           setVehicles(processedVehicles);
           window.vehicleDatabase = processedVehicles;
         } else {
