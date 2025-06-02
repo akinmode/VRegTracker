@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Car, Calendar, CreditCard, Search, Download, Filter, Check, X, Clock, BarChart3 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Car, Calendar, CreditCard, Search, Download, Check, X } from 'lucide-react';
 
 const VehiclePaymentSystem = () => {
   const [vehicles, setVehicles] = useState([]);
@@ -8,8 +8,6 @@ const VehiclePaymentSystem = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [showStats, setShowStats] = useState(false);
   const [activeTab, setActiveTab] = useState('collection'); // 'collection' or 'management'
   const [newVehicle, setNewVehicle] = useState({
     regNumber: '',
