@@ -14,12 +14,41 @@ const VehiclePaymentSystem = () => {
     notes: ''
   });
 
-  // Load data from memory on component mount
+  // Load data from memory and data file on component mount
   useEffect(() => {
-    const savedVehicles = window.vehicleDatabase || [];
-    const savedSessions = window.dailySessionsData || [];
-    setVehicles(savedVehicles);
-    setDailySessions(savedSessions);
+    const loadInitialData = async () => {
+      // Try to load from data file first
+      try {
+        const response = await fetch('/data/vehicles.json');
+        if (response.ok) {
+          const vehicleData = await response.json();
+          const processedVehicles = vehicleData.map(vehicle => ({
+            ...vehicle,
+            id: vehicle.id || Date.now() + Math.random(),
+            dateAdded: vehicle.dateAdded || new Date().toISOString().split('T')[0],
+            totalPayments: vehicle.totalPayments || 0,
+            paymentHistory: vehicle.paymentHistory || [],
+            lastPaidDate: vehicle.lastPaidDate || null
+          }));
+          setVehicles(processedVehicles);
+          window.vehicleDatabase = processedVehicles;
+        } else {
+          // Fallback to memory storage
+          const savedVehicles = window.vehicleDatabase || [];
+          setVehicles(savedVehicles);
+        }
+      } catch (error) {
+        console.log('Could not load vehicles from data file, using memory storage');
+        const savedVehicles = window.vehicleDatabase || [];
+        setVehicles(savedVehicles);
+      }
+
+      // Load sessions from memory
+      const savedSessions = window.dailySessionsData || [];
+      setDailySessions(savedSessions);
+    };
+
+    loadInitialData();
   }, []);
 
   // Save data to memory whenever data changes
@@ -105,10 +134,43 @@ const VehiclePaymentSystem = () => {
       lastPaidDate: editingVehicle ? editingVehicle.lastPaidDate : null
     };
 
+    let updatedVehicles;
     if (editingVehicle) {
-      setVehicles(vehicles.map(v => v.id === editingVehicle.id ? vehicleData : v));
+      updatedVehicles = vehicles.map(v => v.id === editingVehicle.id ? vehicleData : v);
     } else {
-      setVehicles([...vehicles, vehicleData]);
+      updatedVehicles = [...vehicles, vehicleData];
+    }
+    
+    setVehicles(updatedVehicles);
+
+    // Update current session if it exists to include the new/updated vehicle
+    if (currentSession && !editingVehicle) {
+      const updatedSession = {
+        ...currentSession,
+        vehicles: [...currentSession.vehicles, {
+          ...vehicleData,
+          sessionStatus: 'pending',
+          sessionNotes: ''
+        }]
+      };
+      
+      setCurrentSession(updatedSession);
+      setDailySessions(dailySessions.map(session => 
+        session.id === currentSession.id ? updatedSession : session
+      ));
+    } else if (currentSession && editingVehicle) {
+      // Update existing vehicle in current session
+      const updatedSession = {
+        ...currentSession,
+        vehicles: currentSession.vehicles.map(v => 
+          v.id === editingVehicle.id ? { ...v, ...vehicleData } : v
+        )
+      };
+      
+      setCurrentSession(updatedSession);
+      setDailySessions(dailySessions.map(session => 
+        session.id === currentSession.id ? updatedSession : session
+      ));
     }
 
     resetForm();
