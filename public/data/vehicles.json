@@ -1,4 +1,10 @@
-{
-  { "regNumber": "GJ71WFL" },
-  { "regNumber": "NEW123K" }
-}
+[
+  "ABC123",
+  "DEF456",
+  "GHI789",
+  "JKL012",
+  "MNO345",
+  "PQR678",
+  "STU901",
+  "VWX234"
+]
